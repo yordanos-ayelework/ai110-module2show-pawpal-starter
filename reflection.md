@@ -7,16 +7,34 @@
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+--- Actions a user should be able to perform:
 1. Add a pet
 2. Add a pet care task
 3. Generate a daily schedule
+
+--- Classes:
+- Owner
+Attributes: name, pets, scheduler
+Methods: add pet, edit pet, remove pet, generate schedule
+
+- Pet
+Attributes: name, species, age, tasks
+Methods: add task, edit task, remove task, list tasks
+
+- Task
+Attributes: name, pet, duration, priority, due_time, completed
+Methods: mark complete
+
+- Scheduler 
+Attributes: owner, time
+Methods: get tasks, generate plan, sort
 
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
 
----
+--- Yes. I only had edit pet/task. Based on AI feedback, I added add and remove methods for the objects. I also added scheduler attribute to owner class and pet attribute to task class.
 
 ## 2. Scheduling Logic and Tradeoffs
 
