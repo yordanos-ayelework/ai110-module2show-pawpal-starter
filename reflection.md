@@ -27,14 +27,14 @@ Methods: mark complete
 
 - Scheduler 
 Attributes: owner, time
-Methods: get tasks, generate plan, sort
+Methods: get tasks, generate plan, sort by time, sort by priority, filter by priority
 
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
 
---- Yes. I only had edit pet/task. Based on AI feedback, I added add and remove methods for the objects. I also added scheduler attribute to owner class and pet attribute to task class.
+--- Yes. I only had edit pet/task, which don't account for populating the objects. Based on AI feedback, I added add and remove methods for the objects. I also added a scheduler attribute to owner, so that the generate_schedule method could use it, and a pet attribute to task for better identification.
 
 ## 2. Scheduling Logic and Tradeoffs
 
