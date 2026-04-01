@@ -3,42 +3,10 @@ import streamlit as st
 from pawpal_system import Task, Pet, Owner
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
-
 st.title("🐾 PawPal+")
 
-st.markdown(
-    """
-Welcome to the PawPal+ starter app.
-
-This file is intentionally thin. It gives you a working Streamlit app so you can start quickly,
-but **it does not implement the project logic**. Your job is to design the system and build it.
-
-Use this app as your interactive demo once your backend classes/functions exist.
-"""
-)
-
-with st.expander("Scenario", expanded=True):
-    st.markdown(
-        """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
-
-You will design and implement the scheduling logic and connect it to this Streamlit UI.
-"""
-    )
-
-with st.expander("What you need to build", expanded=True):
-    st.markdown(
-        """
-At minimum, your system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
-- Represent the pet and the owner (basic info and preferences)
-- Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan (why each task was chosen and when it happens)
-"""
-    )
-
-st.divider()
+PRIORITY_MAP = {"high": 1, "medium": 2, "low": 3}
+PRIORITY_LABEL = {1: "high", 2: "medium", 3: "low"}
 
 # --- Session state init ---
 if "owner" not in st.session_state:
@@ -48,9 +16,17 @@ owner = st.session_state.owner
 
 # --- Owner ---
 st.subheader("Owner")
-owner_name = st.text_input("Owner name", value=owner.name)
-if owner_name != owner.name:
-    owner.name = owner_name
+col_name, col_time = st.columns(2)
+with col_name:
+    owner_name = st.text_input("Owner name", value=owner.name)
+    if owner_name != owner.name:
+        owner.name = owner_name
+with col_time:
+    time_budget = st.number_input(
+        "Available time (minutes)", min_value=10, max_value=480, value=owner.scheduler.time
+    )
+    if int(time_budget) != owner.scheduler.time:
+        owner.scheduler.time = int(time_budget)
 
 # --- Add a Pet ---
 st.divider()
@@ -70,16 +46,13 @@ if st.button("Add Pet"):
     st.success(f"{pet_name} added to {owner.name}'s pets!")
 
 if owner.pets:
-    st.write("Current pets:")
-    st.table([{"name": p.name, "species": p.species, "age": p.age} for p in owner.pets])
+    st.table([{"Name": p.name, "Species": p.species, "Age": p.age} for p in owner.pets])
 else:
     st.info("No pets yet. Add one above.")
 
 # --- Add a Task ---
 st.divider()
 st.subheader("Add a Task")
-
-PRIORITY_MAP = {"high": 1, "medium": 2, "low": 3}
 
 if not owner.pets:
     st.warning("Add a pet first before scheduling tasks.")
@@ -100,34 +73,64 @@ else:
 
     if st.button("Add Task"):
         target_pet = next(p for p in owner.pets if p.name == task_pet_name)
+        due_datetime = datetime.datetime.combine(datetime.date.today(), due_time)
         task = Task(
             name=task_title,
             pet=target_pet,
             duration=int(duration),
             priority=PRIORITY_MAP[priority_label],
-            due_time=due_time.strftime("%H:%M"),
+            due_date=due_datetime,
         )
         target_pet.add_task(task)
         st.success(f"Task '{task_title}' added to {task_pet_name}.")
 
-    all_tasks = owner.scheduler.get_tasks()
-    if all_tasks:
-        st.write("Current tasks:")
-        st.table(
-            [
-                {
-                    "pet": t.pet.name,
-                    "task": t.name,
-                    "due": t.due_time,
-                    "duration (min)": t.duration,
-                    "priority": t.priority,
-                    "done": t.completed,
-                }
-                for t in all_tasks
-            ]
-        )
+# --- View Tasks ---
+st.divider()
+st.subheader("View Tasks")
+
+all_tasks = owner.scheduler.get_tasks()
+
+if not all_tasks:
+    st.info("No tasks yet. Add one above.")
+else:
+    col_sort, col_filter = st.columns(2)
+    with col_sort:
+        sort_by = st.selectbox("Sort by", ["Due time", "Priority"])
+    with col_filter:
+        pet_options = ["All"] + [p.name for p in owner.pets]
+        pet_filter = st.selectbox("Filter by pet", pet_options)
+
+    if sort_by == "Due time":
+        tasks_to_show = owner.scheduler.sort_by_time()
     else:
-        st.info("No tasks yet. Add one above.")
+        tasks_to_show = owner.scheduler.sort_by_priority()
+
+    if pet_filter != "All":
+        tasks_to_show = owner.scheduler.filter_by_pet(pet_filter)
+        # re-sort the filtered result
+        if sort_by == "Priority":
+            tasks_to_show = sorted(tasks_to_show, key=lambda t: t.priority)
+        else:
+            tasks_to_show = sorted(tasks_to_show, key=lambda t: t.due_date)
+
+    # Conflict warnings
+    conflicts = owner.scheduler.detect_conflicts()
+    for warning in conflicts:
+        st.warning(warning)
+
+    st.table(
+        [
+            {
+                "Pet": t.pet.name,
+                "Task": t.name,
+                "Due": t.due_date.strftime("%H:%M"),
+                "Duration (min)": t.duration,
+                "Priority": PRIORITY_LABEL.get(t.priority, str(t.priority)),
+                "Done": "Yes" if t.completed else "No",
+            }
+            for t in tasks_to_show
+        ]
+    )
 
 # --- Generate Schedule ---
 st.divider()
@@ -136,14 +139,18 @@ st.subheader("Build Schedule")
 if st.button("Generate schedule"):
     plan = owner.generate_schedule()
     if plan:
-        st.success("Schedule generated!")
+        total_min = sum(t.duration for t in plan)
+        st.success(
+            f"Schedule generated! {len(plan)} task(s) — {total_min} of {owner.scheduler.time} minutes used."
+        )
         st.table(
             [
                 {
-                    "due time": t.due_time,
-                    "task": t.name,
-                    "pet": t.pet.name,
-                    "duration (min)": t.duration,
+                    "Due time": t.due_date.strftime("%H:%M"),
+                    "Task": t.name,
+                    "Pet": t.pet.name,
+                    "Duration (min)": t.duration,
+                    "Priority": PRIORITY_LABEL.get(t.priority, str(t.priority)),
                 }
                 for t in plan
             ]

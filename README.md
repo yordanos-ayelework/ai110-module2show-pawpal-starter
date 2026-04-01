@@ -43,7 +43,7 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
-## Smarter Scheduling
+## Smarter Scheduling / Features
 
 - **Conflict detection** — warns if two tasks are scheduled at the same time
 - **Recurring tasks** — completing a task auto-schedules the next one (daily or weekly)
@@ -70,3 +70,8 @@ python -m pytest
 - Two tasks at different times do not trigger a conflict warning
 
 **Confidence Level:** 4/5
+
+## Demo
+<a href="demo_1.png" target="_blank"><img src='demo_1.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
+<a href="demo_2.png" target="_blank"><img src='demo_2.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
+<a href="demo_3.png" target="_blank"><img src='demo_3.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
