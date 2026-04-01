@@ -22,6 +22,7 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+
 ## Getting started
 
 ### Setup
@@ -41,3 +42,12 @@ pip install -r requirements.txt
 5. Add tests to verify key behaviors.
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
+
+## Smarter Scheduling
+
+- **Conflict detection** — warns if two tasks are scheduled at the same time
+- **Recurring tasks** — completing a task auto-schedules the next one (daily or weekly)
+- **Sort by time** — lists tasks in order of due time
+- **Sort by priority** — lists tasks in order of priority
+- **Filter by pet** — shows tasks for a specific pet
+- **Filter by priority** — shows tasks above a given priority level

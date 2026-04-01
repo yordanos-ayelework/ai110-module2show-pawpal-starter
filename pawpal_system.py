@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import List
+from datetime import datetime, timedelta
+from typing import List, Optional
 
 
 @dataclass
@@ -8,13 +9,33 @@ class Task:
     pet: "Pet"
     duration: int  # in minutes
     priority: int  # 1 = highest priority
-    due_time: str  # e.g. "08:00"
+    due_date: datetime  # e.g. datetime(2026, 4, 1, 8, 0)
     completed: bool = False
+    frequency: Optional[str] = None  # "daily", "weekly", or None
 
     def mark_complete(self):
-        """Mark this task as completed."""
+        """Mark this task as completed. If frequency is set, auto-schedules the next occurrence."""
         self.completed = True
         print(f"Task '{self.name}' marked as complete.")
+
+        if self.frequency and self.due_date:
+            if self.frequency == "daily":
+                next_date = self.due_date + timedelta(days=1)
+            elif self.frequency == "weekly":
+                next_date = self.due_date + timedelta(weeks=1)
+            else:
+                return
+
+            next_task = Task(
+                name=self.name,
+                pet=self.pet,
+                duration=self.duration,
+                priority=self.priority,
+                due_date=next_date,
+                frequency=self.frequency,
+            )
+            self.pet.tasks.append(next_task)
+            print(f"Next '{self.name}' scheduled for {next_date.strftime('%Y-%m-%d %H:%M')} ({self.frequency}).")
 
 
 @dataclass
@@ -57,7 +78,7 @@ class Pet:
         print(f"Tasks for {self.name}:")
         for task in self.tasks:
             status = "Done" if task.completed else "Pending"
-            print(f"  [{status}] {task.name} | Due: {task.due_time} | {task.duration} min | Priority: {task.priority}")
+            print(f"  [{status}] {task.name} | Due: {task.due_date.strftime('%Y-%m-%d %H:%M')} | {task.duration} min | Priority: {task.priority}")
 
 
 class Scheduler:
@@ -75,12 +96,33 @@ class Scheduler:
     def sort_by_time(self) -> List[Task]:
         """Return all tasks sorted by due time."""
         tasks = self.get_tasks()
-        return sorted(tasks, key=lambda t: t.due_time)
+        return sorted(tasks, key=lambda t: t.due_date)
 
     def sort_by_priority(self) -> List[Task]:
         """Return all tasks sorted by priority (1 = highest)."""
         tasks = self.get_tasks()
         return sorted(tasks, key=lambda t: t.priority)
+
+    def filter_by_pet(self, pet_name: str) -> List[Task]:
+        """Return all tasks belonging to the named pet."""
+        return [t for t in self.get_tasks() if t.pet.name == pet_name]
+
+    def detect_conflicts(self) -> List[str]:
+        """Return warning messages for any tasks that share the same due_date."""
+        warnings = []
+        tasks = [t for t in self.get_tasks() if not t.completed]
+        seen: dict = {}  # due_date -> first task seen at that time
+        for task in tasks:
+            key = task.due_date
+            if key in seen:
+                other = seen[key]
+                warnings.append(
+                    f"WARNING: '{task.name}' ({task.pet.name}) conflicts with "
+                    f"'{other.name}' ({other.pet.name}) at {key.strftime('%Y-%m-%d %H:%M')}"
+                )
+            else:
+                seen[key] = task
+        return warnings
 
     def filter_by_priority(self, max_priority: int) -> List[Task]:
         """Return incomplete tasks at or above the given priority level."""
@@ -102,7 +144,7 @@ class Scheduler:
         if not plan:
             print("  No tasks fit in the available time.")
         for task in plan:
-            print(f"  {task.due_time} | {task.name} ({task.pet.name}) | {task.duration} min")
+            print(f"  {task.due_date.strftime('%Y-%m-%d %H:%M')} | {task.name} ({task.pet.name}) | {task.duration} min")
         return plan
 
 

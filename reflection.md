@@ -22,12 +22,12 @@ Attributes: name, species, age, tasks
 Methods: add task, edit task, remove task, list tasks
 
 - Task
-Attributes: name, pet, duration, priority, due_time, completed
+Attributes: name, pet, duration, priority, due date, frequency, completed
 Methods: mark complete
 
 - Scheduler 
 Attributes: owner, time
-Methods: get tasks, generate plan, sort by time, sort by priority, filter by priority
+Methods: get tasks, generate plan, sort by time, sort by priority, filter by priority, filter by pet, detect conflicts 
 
 **b. Design changes**
 
@@ -48,7 +48,7 @@ Methods: get tasks, generate plan, sort by time, sort by priority, filter by pri
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
----
+--- The conflict detection algorithm only checks for tasks that have the same timestamp. It doesn't check if tasks overlap (with different start times). I think the tradeoff is reasonable because tasks can still be treated as reminders instead of a strict and complete schedule. 
 
 ## 3. AI Collaboration
 
