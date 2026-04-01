@@ -51,3 +51,22 @@ pip install -r requirements.txt
 - **Sort by priority** — lists tasks in order of priority
 - **Filter by pet** — shows tasks for a specific pet
 - **Filter by priority** — shows tasks above a given priority level
+
+## Testing PawPal+
+
+**Command to run tests:**
+
+```bash
+python -m pytest
+```
+
+**What the tests cover:**
+
+- Task completion changes the completed status
+- Adding a task to a pet adds to its task list
+- Sorting returns tasks in chronological order
+- Completing a daily task schedules a follow-up a day later
+- Two tasks at the same time trigger a conflict warning
+- Two tasks at different times do not trigger a conflict warning
+
+**Confidence Level:** 4/5
